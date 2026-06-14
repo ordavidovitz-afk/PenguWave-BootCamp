@@ -2,17 +2,18 @@ import { useState } from "react";
 
 interface LoginModalProps {
   onClose: () => void;
+  onSuccess: () => void;
 }
 
-export default function LoginModal({ onClose }: LoginModalProps) {
+export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", email, password);
 
-    // Try to call backend (will fail if no backend running)
+    // Authenticate against the backend. Only a response carrying a token
+    // counts as success — that's when we persist it and notify the app.
     fetch("http://localhost:3001/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -20,13 +21,14 @@ export default function LoginModal({ onClose }: LoginModalProps) {
     })
       .then((res) => res.json())
       .then((data) => {
-        localStorage.setItem("token", data.token);
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          onSuccess();
+        }
       })
       .catch(() => {
-        // Backend not running — just close the modal
+        // Backend not running or login failed — leave the modal open.
       });
-
-    onClose();
   };
 
   return (
