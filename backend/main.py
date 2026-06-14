@@ -5,6 +5,11 @@
 # initializes and seeds the database on startup, and exposes a health check.
 # Run it directly (python main.py) to start the development server.
 
+# ensure backend/ is on the path so local modules resolve correctly
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

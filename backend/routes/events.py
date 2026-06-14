@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from database import get_db
 from auth import get_current_user
 from models import EventResponse, EventAnalysis
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from azure_client import AzureAIFoundryClient
 
 load_dotenv()

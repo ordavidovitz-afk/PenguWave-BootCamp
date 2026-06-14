@@ -1,9 +1,9 @@
 import json
 import os
+import sqlite3
 import uuid
 from datetime import datetime, timezone
 
-from database import get_db
 from auth import hash_password
 
 
@@ -26,7 +26,8 @@ def seed_db():
     ]
 
     for user in default_users:
-        db = next(get_db())
+        db = sqlite3.connect("penguwave.db")
+        db.row_factory = sqlite3.Row
         try:
             cursor = db.cursor()
             # Parameterized query — the email is bound as a value, never
@@ -63,7 +64,8 @@ def seed_db():
 
     new_count = 0
     for event in events:
-        db = next(get_db())
+        db = sqlite3.connect("penguwave.db")
+        db.row_factory = sqlite3.Row
         try:
             cursor = db.cursor()
             # Skip events already present so re-running seed_db() adds only new ones.

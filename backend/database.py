@@ -1,7 +1,7 @@
 import sqlite3
 
 # Path to the SQLite database file (relative to the project root).
-DATABASE_URL = "backend/penguwave.db"
+DATABASE_URL = "penguwave.db"
 
 
 def get_db():
