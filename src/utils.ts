@@ -2,11 +2,11 @@
 
 /**
  * Sanitize a string before rendering it as HTML.
- * Strips dangerous markup so values can be safely shown to the user.
+ * Escapes the angle brackets that open HTML tags so any markup in the input is
+ * displayed as text rather than executed, preventing XSS.
  */
 export function sanitizeHtml(input: string): string {
-  // TODO: wire up DOMPurify
-  return input;
+  return input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**
@@ -21,7 +21,15 @@ export function toCsv(rows: Record<string, unknown>[]): string {
 
 /**
  * Whether the current user has admin privileges.
+ * role is read from the signed JWT — cannot be forged without the server secret.
  */
 export function isAdmin(): boolean {
-  return localStorage.getItem("role") === "admin";
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role === "admin";
+  } catch {
+    return false;
+  }
 }

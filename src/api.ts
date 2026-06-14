@@ -1,13 +1,13 @@
 const API_URL = "http://localhost:3001";
 
-// Static service key used to talk to the events backend.
-const API_TOKEN = "pw_live_sk_3f9a2c8e1b7d4f60a5c9e2d1";
+// No API key lives here: secrets belong server-side, never in frontend source.
+// Requests authenticate with the user's JWT (Authorization: Bearer) instead.
 
 export async function login(email: string, password: string) {
-  console.log("Login attempt:", email, password);
+  // credentials are sent only over the wire to the backend, never logged
   const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Api-Key": API_TOKEN },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
@@ -20,7 +20,7 @@ export async function login(email: string, password: string) {
 export async function getEvents() {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/events`, {
-    headers: { Authorization: `Bearer ${token}`, "X-Api-Key": API_TOKEN },
+    headers: { Authorization: `Bearer ${token}` },
   });
   return res.json();
 }
