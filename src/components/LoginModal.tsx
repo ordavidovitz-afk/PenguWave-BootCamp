@@ -2,17 +2,23 @@ import { useState } from "react";
 
 interface LoginModalProps {
   onClose: () => void;
+  onSuccess: () => void;
+  // Whether the modal may be dismissed. Until the user has authenticated this
+  // is false, so login is the only way out — no close button, no backdrop click.
+  canClose: boolean;
 }
 
-export default function LoginModal({ onClose }: LoginModalProps) {
+export default function LoginModal({ onClose, onSuccess, canClose }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", email, password);
+    setError("");
 
-    // Try to call backend (will fail if no backend running)
+    // Authenticate against the backend. Only a response carrying a token
+    // counts as success — that's when we persist it and notify the app.
     fetch("http://localhost:3001/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -20,21 +26,28 @@ export default function LoginModal({ onClose }: LoginModalProps) {
     })
       .then((res) => res.json())
       .then((data) => {
-        localStorage.setItem("token", data.token);
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          onSuccess();
+        } else {
+          // No token in the response means the credentials were rejected.
+          setError("Invalid email or password");
+        }
       })
       .catch(() => {
-        // Backend not running — just close the modal
+        // Backend unreachable or the request failed — show the same message.
+        setError("Invalid email or password");
       });
-
-    onClose();
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={canClose ? onClose : undefined}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
-          ✕
-        </button>
+        {canClose && (
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
+        )}
         <h2>Sign In</h2>
         <p style={{ color: "#666", marginBottom: 20, fontSize: 14 }}>
           Enter your credentials to access PenguWave
@@ -45,7 +58,10 @@ export default function LoginModal({ onClose }: LoginModalProps) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
               placeholder="you@company.com"
             />
           </div>
@@ -54,9 +70,15 @@ export default function LoginModal({ onClose }: LoginModalProps) {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
               placeholder="••••••••"
             />
+            {error && (
+              <p style={{ color: "red", fontSize: 13, marginTop: 8 }}>{error}</p>
+            )}
           </div>
           <button type="submit" className="btn-primary" style={{ width: "100%" }}>
             Sign In
