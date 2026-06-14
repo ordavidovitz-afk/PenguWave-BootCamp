@@ -73,7 +73,7 @@ class AzureAIFoundryClient:
             "model": deployment_name,
             "messages": messages,
             "temperature": temperature,
-            **({"max_tokens": max_tokens} if max_tokens is not None else {}),
+            **({"max_completion_tokens": max_tokens} if max_tokens is not None else {}),
         }
 
         try:
