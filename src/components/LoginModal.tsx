@@ -11,9 +11,11 @@ interface LoginModalProps {
 export default function LoginModal({ onClose, onSuccess, canClose }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
     // Authenticate against the backend. Only a response carrying a token
     // counts as success — that's when we persist it and notify the app.
@@ -27,10 +29,14 @@ export default function LoginModal({ onClose, onSuccess, canClose }: LoginModalP
         if (data.token) {
           localStorage.setItem("token", data.token);
           onSuccess();
+        } else {
+          // No token in the response means the credentials were rejected.
+          setError("Invalid email or password");
         }
       })
       .catch(() => {
-        // Backend not running or login failed — leave the modal open.
+        // Backend unreachable or the request failed — show the same message.
+        setError("Invalid email or password");
       });
   };
 
@@ -52,7 +58,10 @@ export default function LoginModal({ onClose, onSuccess, canClose }: LoginModalP
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
               placeholder="you@company.com"
             />
           </div>
@@ -61,9 +70,15 @@ export default function LoginModal({ onClose, onSuccess, canClose }: LoginModalP
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
               placeholder="••••••••"
             />
+            {error && (
+              <p style={{ color: "red", fontSize: 13, marginTop: 8 }}>{error}</p>
+            )}
           </div>
           <button type="submit" className="btn-primary" style={{ width: "100%" }}>
             Sign In
