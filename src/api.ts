@@ -30,6 +30,13 @@ export async function getUsers() {
   const res = await fetch(`${API_URL}/api/users`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  // Surface the HTTP status so callers can distinguish e.g. a 403 (not an admin)
+  // from a successful response.
+  if (!res.ok) {
+    const err = new Error("Failed to load users") as Error & { status: number };
+    err.status = res.status;
+    throw err;
+  }
   return res.json();
 }
 
