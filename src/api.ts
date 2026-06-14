@@ -22,6 +22,7 @@ export async function getEvents() {
   const res = await fetch(`${API_URL}/api/events`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (!res.ok) throw new Error("Failed to load events");
   return res.json();
 }
 
@@ -48,6 +49,22 @@ export async function createUser(user: { email: string; password: string; role: 
     body: JSON.stringify(user),
   });
   return res.json();
+}
+
+export async function analyzeEvent(id: string) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/api/events/${id}/analyze`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Analysis failed");
+  return res.json();
+}
+
+// Clear the client session and reload. JWTs are stateless, so logging out is
+// simply discarding the stored token (see the backend /logout note).
+export function logout() {
+  localStorage.removeItem("token");
+  window.location.reload();
 }
 
 export async function deleteUser(id: string) {

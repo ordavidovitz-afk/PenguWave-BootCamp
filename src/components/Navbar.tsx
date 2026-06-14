@@ -1,10 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
+import { logout } from "../api";
 
 interface NavbarProps {
   onLoginClick: () => void;
+  isAuthenticated: boolean;
+  userEmail: string;
+  userRole: string;
 }
 
-export default function Navbar({ onLoginClick }: NavbarProps) {
+export default function Navbar({ onLoginClick, isAuthenticated, userEmail, userRole }: NavbarProps) {
   const location = useLocation();
 
   return (
@@ -27,9 +31,20 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
         >
           Users
         </Link>
-        <button onClick={onLoginClick} className="navbar-login-btn">
-          Login
-        </button>
+        {isAuthenticated ? (
+          <>
+            <span style={{ fontSize: 14, color: "#555" }}>
+              {userEmail} ({userRole})
+            </span>
+            <button onClick={logout} className="navbar-login-btn">
+              Logout
+            </button>
+          </>
+        ) : (
+          <button onClick={onLoginClick} className="navbar-login-btn">
+            Login
+          </button>
+        )}
       </div>
     </nav>
   );

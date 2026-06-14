@@ -1,19 +1,64 @@
-import { useState } from "react";
-import mockEvents from "../../data/mock_events.json";
+import { useState, useEffect, Fragment } from "react";
 import { SecurityEvent } from "../types";
 import { sanitizeHtml } from "../utils";
+import { analyzeEvent, getEvents } from "../api";
 
 export default function EventsPage() {
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("ALL");
   const [selectedEvent, setSelectedEvent] = useState<SecurityEvent | null>(null);
 
-  const events = mockEvents as SecurityEvent[];
+  // Events loaded from the real API.
+  const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(false);
+    getEvents()
+      .then((data) => {
+        if (active) setEvents(data);
+      })
+      .catch(() => {
+        if (active) setError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // AI analysis state — only one event is analyzed at a time.
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [analysisText, setAnalysisText] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState(false);
+
+  const handleAnalyze = async (id: string) => {
+    setAnalyzingId(id);
+    setAnalysisError(false);
+    setAnalysisId(null);
+    setAnalysisText(null);
+    try {
+      const result = await analyzeEvent(id);
+      setAnalysisId(id);
+      setAnalysisText(result.analysis);
+    } catch {
+      setAnalysisId(id);
+      setAnalysisError(true);
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
 
   const filtered = events.filter((e) => {
     const matchesSearch =
       e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.description.toLowerCase().includes(search.toLowerCase()) ||
+      (e.description ?? "").toLowerCase().includes(search.toLowerCase()) ||
       e.assetHostname.toLowerCase().includes(search.toLowerCase());
     const matchesSeverity = severityFilter === "ALL" || e.severity === severityFilter;
     return matchesSearch && matchesSeverity;
@@ -24,6 +69,24 @@ export default function EventsPage() {
     if (s === "MEDIUM") return "orange";
     return "green";
   };
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <h1>Security Events</h1>
+        <p style={{ color: "#999" }}>Loading events…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-container">
+        <h1>Security Events</h1>
+        <p style={{ color: "red" }}>Could not load events. Please try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -68,29 +131,54 @@ export default function EventsPage() {
             <th>Asset</th>
             <th>Source IP</th>
             <th>Timestamp</th>
+            <th>AI</th>
           </tr>
         </thead>
         <tbody>
           {filtered.map((event) => (
-            <tr
-              key={event.id}
-              onClick={() => setSelectedEvent(event)}
-              style={{ cursor: "pointer" }}
-            >
-              <td style={{ color: severityColor(event.severity), fontWeight: 600 }}>
-                {event.severity}
-              </td>
-              <td>{event.title}</td>
-              <td style={{ fontFamily: "monospace", fontSize: 13 }}>
-                {event.assetHostname}
-              </td>
-              <td style={{ fontFamily: "monospace", fontSize: 13 }}>
-                {event.sourceIp}
-              </td>
-              <td style={{ fontSize: 13 }}>
-                {new Date(event.timestamp).toLocaleString()}
-              </td>
-            </tr>
+            <Fragment key={event.id}>
+              <tr
+                onClick={() => setSelectedEvent(event)}
+                style={{ cursor: "pointer" }}
+              >
+                <td style={{ color: severityColor(event.severity), fontWeight: 600 }}>
+                  {event.severity}
+                </td>
+                <td>{event.title}</td>
+                <td style={{ fontFamily: "monospace", fontSize: 13 }}>
+                  {event.assetHostname}
+                </td>
+                <td style={{ fontFamily: "monospace", fontSize: 13 }}>
+                  {event.sourceIp}
+                </td>
+                <td style={{ fontSize: 13 }}>
+                  {new Date(event.timestamp).toLocaleString()}
+                </td>
+                <td>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAnalyze(event.id);
+                    }}
+                    disabled={analyzingId !== null}
+                    style={{ fontSize: 13 }}
+                  >
+                    {analyzingId === event.id ? "Analyzing..." : "Analyze"}
+                  </button>
+                </td>
+              </tr>
+              {analysisId === event.id && (
+                <tr>
+                  <td colSpan={6} style={{ background: "#f5f7fa", padding: 12 }}>
+                    {analysisError ? (
+                      <span style={{ color: "#999" }}>Analysis unavailable</span>
+                    ) : (
+                      <div style={{ whiteSpace: "pre-wrap", fontSize: 14 }}>{analysisText}</div>
+                    )}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>

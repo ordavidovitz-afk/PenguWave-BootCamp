@@ -20,16 +20,24 @@ export function toCsv(rows: Record<string, unknown>[]): string {
 }
 
 /**
+ * The current user's identity, read from the signed JWT payload.
+ * Returns null when there is no token or it can't be parsed.
+ */
+export function getCurrentUser(): { email: string; role: string } | null {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return { email: payload.email, role: payload.role };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Whether the current user has admin privileges.
  * role is read from the signed JWT — cannot be forged without the server secret.
  */
 export function isAdmin(): boolean {
-  const token = localStorage.getItem("token");
-  if (!token) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.role === "admin";
-  } catch {
-    return false;
-  }
+  return getCurrentUser()?.role === "admin";
 }

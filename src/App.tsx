@@ -6,6 +6,7 @@ import LoginModal from "./components/LoginModal";
 import EventsPage from "./pages/EventsPage";
 import UsersPage from "./pages/UsersPage";
 import NotFound from "./pages/NotFound";
+import { getCurrentUser } from "./utils";
 
 // Skip the login modal during local development.
 const DEBUG_BYPASS_AUTH = false;
@@ -61,9 +62,18 @@ function App() {
     setShowLogin(false);
   };
 
+  // Identity for the navbar, read from the JWT. Recomputed each render so it
+  // reflects the token immediately after login.
+  const currentUser = isAuthenticated ? getCurrentUser() : null;
+
   return (
     <>
-      <Navbar onLoginClick={() => setShowLogin(true)} />
+      <Navbar
+        onLoginClick={() => setShowLogin(true)}
+        isAuthenticated={isAuthenticated}
+        userEmail={currentUser?.email ?? ""}
+        userRole={currentUser?.role ?? ""}
+      />
       <div className="container">
         <Routes>
           {/* When authenticated, land on /events; otherwise stay put so the
