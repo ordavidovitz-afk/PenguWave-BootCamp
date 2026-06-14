@@ -3,9 +3,12 @@ import { useState } from "react";
 interface LoginModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  // Whether the modal may be dismissed. Until the user has authenticated this
+  // is false, so login is the only way out — no close button, no backdrop click.
+  canClose: boolean;
 }
 
-export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
+export default function LoginModal({ onClose, onSuccess, canClose }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -32,11 +35,13 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={canClose ? onClose : undefined}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
-          ✕
-        </button>
+        {canClose && (
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
+        )}
         <h2>Sign In</h2>
         <p style={{ color: "#666", marginBottom: 20, fontSize: 14 }}>
           Enter your credentials to access PenguWave

@@ -11,8 +11,10 @@ import NotFound from "./pages/NotFound";
 const DEBUG_BYPASS_AUTH = false;
 
 // Wraps a protected page. If the user is authenticated it renders the page;
-// otherwise it opens the login modal (via onBlocked) and bounces home.
-// onBlocked runs in an effect so we never call setState during render.
+// otherwise it opens the login modal (via onBlocked) and renders nothing at
+// all — the page component never mounts, so no protected content exists in the
+// background behind the modal. onBlocked runs in an effect so we never call
+// setState during render.
 function ProtectedRoute({
   isAuthenticated,
   onBlocked,
@@ -26,7 +28,7 @@ function ProtectedRoute({
     if (!isAuthenticated) onBlocked();
   }, [isAuthenticated, onBlocked]);
 
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!isAuthenticated) return null;
   return children;
 }
 
@@ -96,7 +98,11 @@ function App() {
         </Routes>
       </div>
       {showLogin && (
-        <LoginModal onClose={handleCloseLogin} onSuccess={handleLoginSuccess} />
+        <LoginModal
+          onClose={handleCloseLogin}
+          onSuccess={handleLoginSuccess}
+          canClose={isAuthenticated}
+        />
       )}
     </>
   );
